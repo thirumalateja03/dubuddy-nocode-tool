@@ -1,0 +1,32 @@
+{
+  "id": "f68dacba-5910-45b5-8b46-0517add2d7ce",
+  "name": "GroupMember",
+  "tableName": "group_members",
+  "ownerField": null,
+  "version": 1,
+  "publishedAt": "2025-11-01T16:32:37.022Z",
+  "definition": {
+    "fields": [
+      {
+        "name": "groupId",
+        "type": "relation",
+        "relation": {
+          "type": "many-to-one",
+          "field": "id",
+          "model": "Group"
+        }
+      },
+      {
+        "name": "userId",
+        "type": "relation",
+        "relation": {
+          "type": "many-to-one",
+          "field": "id",
+          "model": "User"
+        }
+      }
+    ]
+  },
+  "isSystem": false,
+  "_generatedAt": "2025-11-01T16:32:37.074Z"
+}

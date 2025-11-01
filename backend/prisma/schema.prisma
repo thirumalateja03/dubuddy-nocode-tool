@@ -1,0 +1,247 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * Optional enum kept for compatibility/quick use.
+ */
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  ALL
+}
+
+/**
+ * Core models use UUIDs for stable IDs across services/clients.
+ */
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users                User[]
+  rolePermissions      RolePermission[]
+  modelRolePermissions ModelRolePermission[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String
+  roleId    String?
+  role      Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  records         Record[]         @relation("UserRecords")
+  auditLogs       AuditLog[]       @relation("UserAuditLogs")
+  refreshTokens   RefreshToken[]
+  userPermissions UserPermission[]
+  ModelVersion    ModelVersion[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique // machine key, e.g. "CREATE_ROLE", "MODEL.CREATE"
+  name        String // human friendly
+  category    String // e.g. "feature", "model_action", "system"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // relations
+  rolePermissions RolePermission[]
+  userPermissions UserPermission[]
+  modelRolePerms  ModelRolePermission[]
+}
+
+/**
+ * Map role -> permission (feature-level). Upsert / delete easily from UI.
+ * role can be granted or explicitly denied (granted = false).
+ */
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String
+  permissionId String
+  granted      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+}
+
+/**
+ * Per-user overrides: useful to grant/revoke features for a specific user.
+ */
+model UserPermission {
+  id           String   @id @default(uuid())
+  userId       String
+  permissionId String
+  granted      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@index([permissionId])
+}
+
+/**
+ * ModelDefinition: models created via UI. Use UUID id for stable refs.
+ */
+model ModelDefinition {
+  id         String  @id @default(uuid())
+  name       String
+  tableName  String?
+  json       Json
+  version    Int     @default(1)
+  ownerField String?
+
+  isSystem     Boolean   @default(false)
+  published     Boolean   @default(false)
+  filePath      String? // path to the generated /models/<name>.json file (optional)
+  publishedAt   DateTime?
+  publishedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  modelRolePermissions ModelRolePermission[]
+  records              Record[]
+  auditLog             AuditLog[]
+  ModelVersion         ModelVersion[]
+
+  @@unique([name])
+  @@index([name])
+}
+
+/**
+ * Model-level RBAC mapping: role + model + permission
+ * This maps canonical Permission entries (e.g. 'MODEL.CREATE','MODEL.READ') to roles for a specific model.
+ */
+model ModelRolePermission {
+  id           String   @id @default(uuid())
+  modelId      String
+  roleId       String
+  permissionId String
+  allowed      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  model      ModelDefinition @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  role       Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission      @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([modelId, roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model ModelVersion {
+  id            String   @id @default(uuid())
+  modelId       String
+  versionNumber Int
+  json          Json
+  isSystem      Boolean @default(false)
+  createdById   String?
+  createdBy     User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  model  ModelDefinition @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  Record Record[]
+
+  @@unique([modelId, versionNumber])
+  @@index([modelId])
+}
+
+/**
+ * Generic records container (dynamic model data saved as JSON)
+ */
+model Record {
+  id             String    @id @default(uuid())
+  modelId        String
+  modelName      String
+  modelVersionId String?
+  data           Json
+  ownerId        String?
+  owner          User?     @relation("UserRecords", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  model        ModelDefinition @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  modelVersion ModelVersion?   @relation(fields: [modelVersionId], references: [id], onDelete: SetNull)
+
+  @@index([modelId])
+  @@index([modelVersionId])
+  @@index([modelName])
+  @@index([ownerId])
+}
+
+/**
+ * Refresh tokens (hashed) with rotation info
+ */
+model RefreshToken {
+  id           String         @id @default(uuid())
+  tokenHash    String
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime       @default(now())
+  expiresAt    DateTime
+  revoked      Boolean        @default(false)
+  replacedById String?
+  replacedBy   RefreshToken?  @relation("TokenReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  createdByIp  String?
+  revokedAt    DateTime?
+  replacements RefreshToken[] @relation("TokenReplacement")
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/**
+ * Audit log for immutable operations
+ */
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  modelId   String?
+  modelName String?
+  recordId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  model ModelDefinition? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([modelId])
+  @@index([createdAt])
+}

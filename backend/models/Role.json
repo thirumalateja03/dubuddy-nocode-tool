@@ -1,0 +1,28 @@
+{
+  "id": "38ee7719-f315-4544-8e44-56f8db7ee25d",
+  "name": "Role",
+  "tableName": "roles",
+  "ownerField": null,
+  "version": 1,
+  "publishedAt": "2025-11-01T16:32:36.857Z",
+  "definition": {
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "name": "isSystem",
+        "type": "boolean",
+        "default": true
+      }
+    ]
+  },
+  "isSystem": true,
+  "_generatedAt": "2025-11-01T16:32:37.041Z"
+}

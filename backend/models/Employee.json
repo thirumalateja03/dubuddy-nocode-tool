@@ -1,0 +1,41 @@
+{
+  "id": "402d0cd6-7ae4-46de-abd2-89bd12c1c283",
+  "name": "Employee",
+  "tableName": "employees",
+  "ownerField": "ownerId",
+  "version": 1,
+  "publishedAt": "2025-11-01T16:32:36.988Z",
+  "definition": {
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "age",
+        "type": "number"
+      },
+      {
+        "name": "isActive",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "name": "departmentId",
+        "type": "relation",
+        "relation": {
+          "type": "many-to-one",
+          "field": "id",
+          "model": "Department"
+        }
+      },
+      {
+        "name": "ownerId",
+        "type": "string"
+      }
+    ]
+  },
+  "isSystem": false,
+  "_generatedAt": "2025-11-01T16:32:37.065Z"
+}

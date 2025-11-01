@@ -1,0 +1,19 @@
+{
+  "id": "cebd06a7-456d-45ed-a246-420deff862ae",
+  "name": "Group",
+  "tableName": "groups",
+  "ownerField": null,
+  "version": 1,
+  "publishedAt": "2025-11-01T16:32:37.007Z",
+  "definition": {
+    "fields": [
+      {
+        "name": "title",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "isSystem": false,
+  "_generatedAt": "2025-11-01T16:32:37.069Z"
+}

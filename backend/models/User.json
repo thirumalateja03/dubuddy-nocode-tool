@@ -1,0 +1,43 @@
+{
+  "id": "59012bae-1d3d-4711-ab81-6a0d1fc9a60b",
+  "name": "User",
+  "tableName": "users",
+  "ownerField": "id",
+  "version": 1,
+  "publishedAt": "2025-11-01T16:32:36.889Z",
+  "definition": {
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "email",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "password",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "roleId",
+        "type": "relation",
+        "relation": {
+          "type": "many-to-one",
+          "field": "id",
+          "model": "Role"
+        }
+      },
+      {
+        "name": "isActive",
+        "type": "boolean",
+        "default": true
+      }
+    ]
+  },
+  "isSystem": true,
+  "_generatedAt": "2025-11-01T16:32:37.047Z"
+}
