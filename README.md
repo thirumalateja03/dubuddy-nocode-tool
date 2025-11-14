@@ -70,8 +70,9 @@ COOKIE_SECURE=<false>          # set true in production (requires https)
 COOKIE_SAMESITE=<lax>
 
 # Seed accounts (change in prod)
-SEED_ADMIN_EMAIL=<admin@local.test>
-SEED_ADMIN_PASSWORD=<AdminPass123!>
+# You can use defaults
+SEED_ADMIN_EMAIL=<admin@local.test> # default: "admin@local.test"
+SEED_ADMIN_PASSWORD=<AdminPass123!> # default: "AdminPass123!"
 SEED_MANAGER_EMAIL=<manager@local.test>
 SEED_MANAGER_PASSWORD=<ManagerPass123!>
 SEED_VIEWER_EMAIL=<viewer@local.test>
@@ -110,8 +111,6 @@ npx prisma migrate dev --name init
 ```bash
 # common example commands:
 npx ts-node src/seed/initialSeed.ts
-# OR (if using the other filename)
-npx ts-node src/seed/seed_system_and_models_fixed.ts
 ```
 
 > Seed does:
@@ -175,8 +174,6 @@ Run:
 
 ```bash
 npx ts-node src/seed/initialSeed.ts
-# or
-npx ts-node src/seed/seed_system_and_models_fixed.ts
 ```
 
 If seed fails:
